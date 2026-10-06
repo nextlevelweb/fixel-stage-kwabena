@@ -6,6 +6,9 @@ import {
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -14,10 +17,13 @@ export default function App() {
           path="/"
           element={<Login />}
         />
-
         <Route
           path="/dashboard"
-          element={<Dashboard />}
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
         />
 
       </Routes>
