@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/projects";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProjectDetail from "./pages/projectdetail";
+import Review from "./pages/Review";
 
 export default function App() {
   return (
@@ -29,7 +30,22 @@ export default function App() {
           }
         />
 
+<Route
+  path="/review/:publicKey"
+  element={<Review />}
+/>
 
+  <Route
+  path="/projects/:id"
+  element={
+
+    <ProtectedRoute>
+
+      <ProjectDetail />
+
+    </ProtectedRoute>
+
+  }
         <Route
           path="/projects"
           element={
@@ -42,17 +58,5 @@ export default function App() {
       </Routes>
     </BrowserRouter>
   );
-  
-  <Route
-  path="/projects/:id"
-  element={
-
-    <ProtectedRoute>
-
-      <ProjectDetail />
-
-    </ProtectedRoute>
-
-  }
-/>
+        />
 }
