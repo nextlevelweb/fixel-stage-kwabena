@@ -16,6 +16,9 @@ export default function Review() {
   const [message, setMessage] =
     useState("");
 
+const [screenshot, setScreenshot] =
+  useState<any>(null);
+
   useEffect(function () {
     getProject();
   }, []);
@@ -41,15 +44,52 @@ export default function Review() {
   async function addFeedback(
     e: React.FormEvent
   ) {
-    e.preventDefault()
+    e.preventDefault();
 
     // Feedback mag niet leeg zijn
     if (message == "") {
       alert("Schrijf eerst feedback");
       return;
-
     }
 
+    // Standaard geen screenshot
+    let screenshotUrl: string | null = null;
+
+    // Alleen uploaden als er een bestand is
+    if (screenshot) {
+      // Unieke naam maken
+      const fileName =
+        Date.now() +
+        "-" +
+        screenshot.name;
+
+      // Bestand uploaden
+      const upload =
+        await supabase.storage
+          .from("screenshots")
+          .upload(
+            fileName,
+            screenshot
+          );
+
+      if (upload.error) {
+        alert(
+          "Screenshot kon niet worden geupload"
+        );
+        return;
+      }
+
+      // Openbare URL ophalen
+      const urlResult =
+        supabase.storage
+          .from("screenshots")
+          .getPublicUrl(fileName);
+
+      screenshotUrl =
+        urlResult.data.publicUrl;
+    }
+
+    // Feedback opslaan
     const result =
       await supabase
         .from("feedback")
@@ -58,6 +98,7 @@ export default function Review() {
           page_path: page,
           element: element,
           message: message,
+          screenshot_url: screenshotUrl,
           status: "nieuw"
         });
 
@@ -69,9 +110,11 @@ export default function Review() {
     }
 
     alert("Feedback toegevoegd");
+
     // Inputs leeg maken
     setElement("");
     setMessage("");
+    setScreenshot(null);
   }
   if (project == null) {
     return (
@@ -119,6 +162,20 @@ export default function Review() {
           }}
         />
 
+<label>
+  Screenshot
+</label>
+<input
+  type="file"
+  accept="image/*"
+  onChange={function (e) {
+    if (e.target.files) {
+      setScreenshot(
+        e.target.files[0]
+      );
+    }
+  }}
+/>
         <label>
           Feedback
         </label>
@@ -127,6 +184,20 @@ export default function Review() {
           value={message}
           onChange={function (e) {
             setMessage(e.target.value);
+          }}
+        />
+
+        <label>
+          Screenshot (optioneel)
+        </label>
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={function (e) {
+            if (e.target.files) {
+              setScreenshot(e.target.files[0]);
+            }
           }}
         />
         <button type="submit">
