@@ -1,18 +1,26 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../supabase";
-export default function Review() {
 
-  // Public key uit URL
+export default function Review() {
   const params = useParams();
   const [project, setProject] =
     useState<any>(null);
+
+  const [page, setPage] =
+    useState("/");
+
+  const [element, setElement] =
+    useState("");
+
+  const [message, setMessage] =
+    useState("");
 
   useEffect(function () {
     getProject();
   }, []);
 
-  // Project zoeken met public key
+  // Project ophalen via openbare sleutel
   async function getProject() {
     const result =
       await supabase
@@ -29,12 +37,46 @@ export default function Review() {
     }
   }
 
+  // Feedback opslaan
+  async function addFeedback(
+    e: React.FormEvent
+  ) {
+    e.preventDefault()
+
+    // Feedback mag niet leeg zijn
+    if (message == "") {
+      alert("Schrijf eerst feedback");
+      return;
+
+    }
+
+    const result =
+      await supabase
+        .from("feedback")
+        .insert({
+          project_id: project.id,
+          page_path: page,
+          element: element,
+          message: message,
+          status: "nieuw"
+        });
+
+    if (result.error) {
+      alert(
+        "Feedback kon niet worden opgeslagen"
+      );
+      return;
+    }
+
+    alert("Feedback toegevoegd");
+    // Inputs leeg maken
+    setElement("");
+    setMessage("");
+  }
   if (project == null) {
     return (
       <main>
-        <p>
-          Project niet gevonden.
-        </p>
+        <p>Project niet gevonden.</p>
       </main>
     );
   }
@@ -42,16 +84,56 @@ export default function Review() {
   return (
     <main>
       <h1>
-        Review {project.name}
+        Feedback voor {project.name}
       </h1>
-      <p>
-        Hier kun je feedback geven.
-      </p>
       <a
         href={project.website_url}
-        target="_blank" >
+        target="_blank"
+      >
         Website openen
       </a>
+
+      <h2>Feedback toevoegen</h2>
+      <form onSubmit={addFeedback}>
+        <label>
+          Pagina
+        </label>
+
+        <input
+          value={page}
+          placeholder="/contact"
+          onChange={function (e) {
+            setPage(e.target.value);
+          }}
+        />
+
+        <label>
+          Element
+        </label>
+
+        <input
+          value={element}
+          placeholder="Bijvoorbeeld menu knop"
+          onChange={function (e) {
+            setElement(e.target.value);
+          }}
+        />
+
+        <label>
+          Feedback
+        </label>
+
+        <textarea
+          value={message}
+          onChange={function (e) {
+            setMessage(e.target.value);
+          }}
+        />
+        <button type="submit">
+          Feedback toevoegen
+        </button>
+      </form>
     </main>
   );
+  
 }
