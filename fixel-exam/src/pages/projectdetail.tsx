@@ -115,8 +115,8 @@ export default function ProjectDetail() {
       .insert({
         project_id: params.id,
         actor_type: "medewerker",
-        type_gebeurtenis: "status",
-        omschrijving:
+        event_type: "status",
+        description:
           "Feedback status veranderd naar " +
           newStatus
       });
@@ -400,7 +400,7 @@ export default function ProjectDetail() {
 
                 <p>
                   {
-                    activity.omschrijving
+                    activity.description
                   }
                 </p>
 
