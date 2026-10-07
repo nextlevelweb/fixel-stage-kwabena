@@ -1,28 +1,34 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+
 import Nav from "../components/Nav";
 import { supabase } from "../supabase";
 
 export default function ProjectDetail() {
-
-  // Haalt het project id uit de URL
+  // Project id from the URL
   const params = useParams();
 
+  // Project
   const [project, setProject] =
     useState<any>(null);
 
+  // Feedback from this project
   const [feedback, setFeedback] =
     useState<any[]>([]);
 
+  // Status filter
   const [filter, setFilter] =
     useState("alles");
 
+  // Search text
   const [search, setSearch] =
     useState("");
 
+  // Sorting
   const [sort, setSort] =
     useState("newest");
 
+  // Project history
   const [activities, setActivities] =
     useState<any[]>([]);
 
@@ -32,7 +38,7 @@ export default function ProjectDetail() {
     getActivities();
   }, []);
 
-  // Eén project ophalen
+  // Get one project
   async function getProject() {
     const result =
       await supabase
@@ -46,11 +52,11 @@ export default function ProjectDetail() {
     }
   }
 
-  // Feedback van dit project ophalen
+  // Get feedback from this project
   async function getFeedback() {
     const result =
       await supabase
-        .from("feedback")
+        .from("feedback_items")
         .select("*")
         .eq(
           "project_id",
@@ -62,11 +68,11 @@ export default function ProjectDetail() {
     }
   }
 
-  // Activiteiten ophalen
+  // Get project history
   async function getActivities() {
     const result =
       await supabase
-        .from("activities")
+        .from("activity_log")
         .select("*")
         .eq(
           "project_id",
@@ -82,39 +88,49 @@ export default function ProjectDetail() {
     }
   }
 
-  // Status van feedback veranderen
+  // Change feedback status
   async function changeStatus(
-    id: number,
+    id: string,
     newStatus: string
   ) {
-    // Status aanpassen
-    await supabase
-      .from("feedback")
-      .update({
-        status: newStatus
-      })
-      .eq("id", id);
+    const result =
+      await supabase
+        .from("feedback_items")
+        .update({
+          status: newStatus
+        })
+        .eq("id", id);
 
-    // Activiteit bewaren
+    if (result.error) {
+      alert(
+        "Status kon niet worden aangepast"
+      );
+
+      return;
+    }
+
+    // Save action in history
     await supabase
-      .from("activities")
+      .from("activity_log")
       .insert({
-        project_id: Number(params.id),
-        text:
+        project_id: params.id,
+        actor_type: "medewerker",
+        type_gebeurtenis: "status",
+        omschrijving:
           "Feedback status veranderd naar " +
           newStatus
       });
 
-    // Lijst opnieuw ophalen
+    // Reload
     getFeedback();
     getActivities();
   }
 
-  // Kopie maken van feedback
+  // Make copy so original array is not changed
   let sortedFeedback =
     [...feedback];
 
-  // Sorteren
+  // Sort feedback
   sortedFeedback.sort(function (a, b) {
     const dateA =
       new Date(
@@ -126,78 +142,100 @@ export default function ProjectDetail() {
         b.created_at
       ).getTime();
 
-    // Oudste eerst
     if (sort == "oldest") {
       return dateA - dateB;
     }
 
-    // Nieuwste eerst
     return dateB - dateA;
   });
 
+  // Loading
   if (project == null) {
-    return <p>Laden...</p>;
+    return (
+      <p>
+        Laden...
+      </p>
+    );
   }
 
-  // Alleen feedback tonen die past bij de status en het zoekwoord
-  const shownFeedback = sortedFeedback.filter(function (item) {
-    // Status controleren
-    if (
-      filter != "alles" &&
-      item.status != filter
-    ) {
-      return false;
-    }
+  // Filter and search
+  const shownFeedback =
+    sortedFeedback.filter(
+      function (item) {
 
-    // Tekst waarin we zoeken
-    const text =
-      item.message +
-      " " +
-      item.page_path +
-      " " +
-      item.element;
+        // Filter status
+        if (
+          filter != "alles" &&
+          item.status != filter
+        ) {
+          return false;
+        }
 
-    // Zoekwoord controleren
-    if (
-      !text
-        .toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
-    ) {
-      return false;
-    }
+        // Search in feedback comment
+        if (
+          !item.comment
+            .toLowerCase()
+            .includes(
+              search.toLowerCase()
+            )
+        ) {
+          return false;
+        }
 
-    return true;
-  });
+        return true;
+      }
+    );
 
   return (
     <>
       <Nav />
+
       <main>
+
         <h1>
           {project.name}
         </h1>
-        <p>
-          Website:
-        </p>
 
+
+        {/* Website URL */}
+
+        <h2>
+          Website
+        </h2>
 
         <a
-          href={project.website_url}
+          href={project.url}
           target="_blank"
         >
-          {project.website_url}
+          {project.url}
         </a>
 
-        <h2>Reviewer link</h2>
+
+        {/* Reviewer link */}
+
+        <h2>
+          Reviewlink
+        </h2>
+
         <a
-          href={"/review/" + project.public_key}
+          href={
+            "/review/" +
+            project.public_key
+          }
+          target="_blank"
         >
           Open reviewer pagina
         </a>
 
-        <h2>Feedback</h2>
+
+        {/* Feedback */}
+
+        <h2>
+          Feedback
+        </h2>
+
+
+        {/* Search */}
 
         <label>
           Zoeken
@@ -207,9 +245,14 @@ export default function ProjectDetail() {
           placeholder="Zoek feedback..."
           value={search}
           onChange={function (e) {
-            setSearch(e.target.value);
+            setSearch(
+              e.target.value
+            );
           }}
         />
+
+
+        {/* Filter */}
 
         <label>
           Filter
@@ -218,22 +261,30 @@ export default function ProjectDetail() {
         <select
           value={filter}
           onChange={function (e) {
-            setFilter(e.target.value);
+            setFilter(
+              e.target.value
+            );
           }}
         >
           <option value="alles">
             Alles
           </option>
-          <option value="nieuw">
-            Nieuw
+
+          <option value="open">
+            Open
           </option>
-          <option value="in behandeling">
-            In behandeling
+
+          <option value="bezig">
+            Bezig
           </option>
+
           <option value="afgerond">
             Afgerond
           </option>
         </select>
+
+
+        {/* Sort */}
 
         <label>
           Sorteren
@@ -242,82 +293,130 @@ export default function ProjectDetail() {
         <select
           value={sort}
           onChange={function (e) {
-            setSort(e.target.value);
+            setSort(
+              e.target.value
+            );
           }}
         >
           <option value="newest">
             Nieuwste eerst
           </option>
+
           <option value="oldest">
             Oudste eerst
           </option>
         </select>
 
-        {shownFeedback.map(function (item) {
-          return (
-            <div key={item.id}>
-              <hr />
-              <p>
-                Pagina: {item.page_path}
-              </p>
-              <p>
-                Element: {item.element}
-              </p>
-              <p>
-                {item.message}
-              </p>
 
-              <select
-                value={item.status}
-                onChange={function (e) {
-                  changeStatus(
-                    item.id,
-                    e.target.value
-                  );
-                }}
-              >
-                <option value="nieuw">
-                  Nieuw
-                </option>
-                <option value="in behandeling">
-                  In behandeling
-                </option>
-                <option value="afgerond">
-                  Afgerond
-                </option>
-              </select>
+        {/* No feedback */}
 
-              {item.screenshot_url && (
-                <a
-                  href={item.screenshot_url}
-                  target="_blank"
+        {shownFeedback.length == 0 && (
+          <p>
+            Geen feedback gevonden.
+          </p>
+        )}
+
+
+        {/* Feedback list */}
+
+        {shownFeedback.map(
+          function (item) {
+            return (
+              <div key={item.id}>
+                <hr />
+
+                <p>
+                  Feedback #{item.id}
+                </p>
+
+                <p>
+                  {item.comment}
+                </p>
+
+                <p>
+                  Positie:{" "}
+                  {Math.round(
+                    item.x_percent
+                  )}
+                  % /{" "}
+                  {Math.round(
+                    item.y_percent
+                  )}
+                  %
+                </p>
+
+
+                {/* Change status */}
+
+                <label>
+                  Status
+                </label>
+
+                <select
+                  value={item.status}
+                  onChange={function (e) {
+                    changeStatus(
+                      item.id,
+                      e.target.value
+                    );
+                  }}
                 >
-                  Screenshot bekijken
-                </a>
-              )}
-            </div>
-          );
-        })}
+                  <option value="open">
+                    Open
+                  </option>
 
-        <h2>Activiteiten</h2>
+                  <option value="bezig">
+                    Bezig
+                  </option>
 
-        {activities.map(function (activity) {
-          return (
-            <div key={activity.id}>
-              <p>
-                {activity.text}
-              </p>
+                  <option value="afgerond">
+                    Afgerond
+                  </option>
+                </select>
 
-              <small>
-                {new Date(
-                  activity.created_at
-                ).toLocaleString()}
-              </small>
+              </div>
+            );
+          }
+        )}
 
-              <hr />
-            </div>
-          );
-        })}
+
+        {/* Activity history */}
+
+        <h2>
+          Activiteiten
+        </h2>
+
+        {activities.length == 0 && (
+          <p>
+            Nog geen activiteit voor dit
+            project.
+          </p>
+        )}
+
+        {activities.map(
+          function (activity) {
+            return (
+              <div key={activity.id}>
+
+                <p>
+                  {
+                    activity.omschrijving
+                  }
+                </p>
+
+                <small>
+                  {new Date(
+                    activity.created_at
+                  ).toLocaleString()}
+                </small>
+
+                <hr />
+
+              </div>
+            );
+          }
+        )}
+
       </main>
     </>
   );
