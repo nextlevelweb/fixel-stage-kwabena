@@ -32,10 +32,23 @@ export default function ProjectDetail() {
   const [activities, setActivities] =
     useState<any[]>([]);
 
+  // Feedback where the reply form is open
+  const [replyFeedbackId, setReplyFeedbackId] =
+    useState<number | null>(null);
+
+  // Text of the reply being written
+  const [replyText, setReplyText] =
+    useState("");
+
+  // All replies on feedback
+  const [replies, setReplies] =
+    useState<any[]>([]);
+
   useEffect(function () {
     getProject();
     getFeedback();
     getActivities();
+    getReplies();
   }, []);
 
   // Get one project
@@ -88,6 +101,22 @@ export default function ProjectDetail() {
     }
   }
 
+  // Get all replies
+  async function getReplies() {
+    const result =
+      await supabase
+        .from("feedback_replies")
+        .select("*")
+        .order(
+          "created_at",
+          { ascending: true }
+        );
+
+    if (result.data) {
+      setReplies(result.data);
+    }
+  }
+
   // Change feedback status
   async function changeStatus(
     id: string,
@@ -124,6 +153,69 @@ export default function ProjectDetail() {
     // Reload
     getFeedback();
     getActivities();
+  }
+
+  // Save a reply on a feedback item
+  async function addReply(
+    feedbackId: number
+  ) {
+    // Empty reply is not allowed
+    if (replyText.trim() == "") {
+      return;
+    }
+
+    // Get logged-in user
+    const userResult =
+      await supabase.auth.getUser();
+
+    const user =
+      userResult.data.user;
+
+    if (!user) {
+      alert("Je bent niet ingelogd");
+      return;
+    }
+
+    // Save reply
+    const result =
+      await supabase
+        .from("feedback_replies")
+        .insert({
+          feedback_id: feedbackId,
+          created_by: user.id,
+          author_type: "medewerker",
+          author_name: null,
+          message: replyText
+        });
+
+    if (result.error) {
+      alert(
+        "Reactie kon niet worden opgeslagen"
+      );
+      return;
+    }
+
+    // Add activity
+    await supabase
+      .from("activity_log")
+      .insert({
+        project_id: Number(params.id),
+        created_by: user.id,
+        actor_type: "medewerker",
+        event_type: "reactie",
+        description:
+          "Nieuwe reactie: " +
+          replyText
+      });
+
+    // Clear input
+    setReplyText("");
+    setReplyFeedbackId(null);
+
+    getReplies();
+    getActivities();
+
+    alert("Reactie toegevoegd");
   }
 
   // Make copy so original array is not changed
@@ -373,6 +465,87 @@ export default function ProjectDetail() {
                     Afgerond
                   </option>
                 </select>
+
+                {/* Reply */}
+
+                <h3>
+                  Reactie
+                </h3>
+
+                {replies
+                  .filter(function (reply) {
+                    return (
+                      reply.feedback_id ==
+                      item.id
+                    );
+                  })
+                  .map(function (reply) {
+                    return (
+                      <div key={reply.id}>
+                        <p>
+                          <strong>
+                            {reply.author_type}
+                          </strong>
+                        </p>
+
+                        <p>
+                          {reply.message}
+                        </p>
+
+                        <small>
+                          {new Date(
+                            reply.created_at
+                          ).toLocaleString()}
+                        </small>
+                      </div>
+                    );
+                  })}
+
+                {replyFeedbackId != item.id && (
+                  <button
+                    type="button"
+                    onClick={function () {
+                      setReplyFeedbackId(
+                        item.id
+                      );
+                    }}
+                  >
+                    Reageren
+                  </button>
+                )}
+
+                {replyFeedbackId == item.id && (
+                  <div>
+                    <textarea
+                      value={replyText}
+                      placeholder="Schrijf een reactie..."
+                      onChange={function (e) {
+                        setReplyText(
+                          e.target.value
+                        );
+                      }}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={function () {
+                        addReply(item.id);
+                      }}
+                    >
+                      Versturen
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={function () {
+                        setReplyText("");
+                        setReplyFeedbackId(null);
+                      }}
+                    >
+                      Annuleren
+                    </button>
+                  </div>
+                )}
 
               </div>
             );
