@@ -77,6 +77,57 @@ export default function Projects() {
     getProjects();
   }
 
+  // Project verwijderen
+  async function deleteProject(id: number) {
+    const answer =
+      confirm("Wil je dit project verwijderen?");
+
+    if (answer == false) {
+      return;
+    }
+
+    await supabase
+      .from("projects")
+      .delete()
+      .eq("id", id);
+
+    getProjects();
+  }
+
+  // Project bewerken
+  async function editProject(project: any) {
+    const newName =
+      prompt("Nieuwe projectnaam", project.name);
+
+    // Op annuleren geklikt
+    if (newName == null) {
+      return;
+    }
+
+    const newWebsite =
+      prompt("Nieuwe website URL", project.website_url);
+
+    if (newWebsite == null) {
+      return;
+    }
+
+    const result =
+      await supabase
+        .from("projects")
+        .update({
+          name: newName,
+          website_url: newWebsite
+        })
+        .eq("id", project.id);
+
+    if (result.error) {
+      alert("Project kon niet worden aangepast");
+      return;
+    }
+
+    getProjects();
+  }
+
   return (
     <>
       <Nav />
@@ -132,6 +183,33 @@ export default function Projects() {
               >
                 Open project
               </Link>
+
+              <p>
+                Reviewer link:{" "}
+                <a
+                  href={"/review/" + project.public_key}
+                  target="_blank"
+                >
+                  {window.location.origin + "/review/" + project.public_key}
+                </a>
+              </p>
+              <button
+  onClick={function () {
+    deleteProject(project.id);
+  }}>
+
+  Verwijderen
+
+</button>
+
+              <button
+                onClick={function () {
+                  editProject(project); // Open edit project
+                }}
+              >
+                Bewerken
+              </button>
+
               <hr />
             </div>
           );
