@@ -19,6 +19,9 @@ export default function Review() {
 const [screenshot, setScreenshot] =
   useState<any>(null);
 
+  const [feedback, setFeedback] =
+    useState<any[]>([]);
+
   useEffect(function () {
     getProject();
   }, []);
@@ -37,6 +40,23 @@ const [screenshot, setScreenshot] =
 
     if (result.data) {
       setProject(result.data);
+      getFeedback(result.data.id);
+    }
+  }
+
+  // Feedback ophalen voor klant
+  async function getFeedback(projectId: number) {
+    const result =
+      await supabase
+        .from("feedback")
+        .select("*")
+        .eq(
+          "project_id",
+          projectId
+        );
+
+    if (result.data) {
+      setFeedback(result.data);
     }
   }
 
@@ -123,6 +143,9 @@ const [screenshot, setScreenshot] =
     setElement("");
     setMessage("");
     setScreenshot(null);
+
+    // Lijst opnieuw ophalen
+    getFeedback(project.id);
   }
   if (project == null) {
     return (
@@ -195,23 +218,32 @@ const [screenshot, setScreenshot] =
           }}
         />
 
-        <label>
-          Screenshot (optioneel)
-        </label>
-
-        <input
-          type="file"
-          accept="image/*"
-          onChange={function (e) {
-            if (e.target.files) {
-              setScreenshot(e.target.files[0]);
-            }
-          }}
-        />
         <button type="submit">
           Feedback toevoegen
         </button>
       </form>
+
+      <h2>Mijn feedback</h2>
+
+      {feedback.map(function (item) {
+        return (
+          <div key={item.id}>
+            <hr />
+
+            <p>
+              Pagina: {item.page_path}
+            </p>
+
+            <p>
+              {item.message}
+            </p>
+
+            <p>
+              Status: {item.status}
+            </p>
+          </div>
+        );
+      })}
     </main>
   );
   
