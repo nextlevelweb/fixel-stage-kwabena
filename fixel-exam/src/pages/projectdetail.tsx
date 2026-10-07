@@ -17,9 +17,13 @@ export default function ProjectDetail() {
   const [filter, setFilter] =
     useState("alles");
 
+  const [activities, setActivities] =
+    useState<any[]>([]);
+
   useEffect(function () {
     getProject();
     getFeedback();
+    getActivities();
   }, []);
 
   // Eén project ophalen
@@ -52,11 +56,32 @@ export default function ProjectDetail() {
     }
   }
 
+  // Activiteiten ophalen
+  async function getActivities() {
+    const result =
+      await supabase
+        .from("activities")
+        .select("*")
+        .eq(
+          "project_id",
+          params.id
+        )
+        .order(
+          "created_at",
+          { ascending: false }
+        );
+
+    if (result.data) {
+      setActivities(result.data);
+    }
+  }
+
   // Status van feedback veranderen
   async function changeStatus(
     id: number,
     newStatus: string
   ) {
+    // Status aanpassen
     await supabase
       .from("feedback")
       .update({
@@ -64,8 +89,19 @@ export default function ProjectDetail() {
       })
       .eq("id", id);
 
+    // Activiteit bewaren
+    await supabase
+      .from("activities")
+      .insert({
+        project_id: Number(params.id),
+        text:
+          "Feedback status veranderd naar " +
+          newStatus
+      });
+
     // Lijst opnieuw ophalen
     getFeedback();
+    getActivities();
   }
 
   if (project == null) {
@@ -174,6 +210,26 @@ export default function ProjectDetail() {
                   Screenshot bekijken
                 </a>
               )}
+            </div>
+          );
+        })}
+
+        <h2>Activiteiten</h2>
+
+        {activities.map(function (activity) {
+          return (
+            <div key={activity.id}>
+              <p>
+                {activity.text}
+              </p>
+
+              <small>
+                {new Date(
+                  activity.created_at
+                ).toLocaleString()}
+              </small>
+
+              <hr />
             </div>
           );
         })}

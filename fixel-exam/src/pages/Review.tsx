@@ -109,6 +109,14 @@ const [screenshot, setScreenshot] =
       return;
     }
 
+    // Activiteit bewaren
+    await supabase
+      .from("activities")
+      .insert({
+        project_id: project.id,
+        text: "Nieuwe feedback toegevoegd"
+      });
+
     alert("Feedback toegevoegd");
 
     // Inputs leeg maken
