@@ -20,6 +20,9 @@ export default function ProjectDetail() {
   const [search, setSearch] =
     useState("");
 
+  const [sort, setSort] =
+    useState("newest");
+
   const [activities, setActivities] =
     useState<any[]>([]);
 
@@ -107,12 +110,37 @@ export default function ProjectDetail() {
     getActivities();
   }
 
+  // Kopie maken van feedback
+  let sortedFeedback =
+    [...feedback];
+
+  // Sorteren
+  sortedFeedback.sort(function (a, b) {
+    const dateA =
+      new Date(
+        a.created_at
+      ).getTime();
+
+    const dateB =
+      new Date(
+        b.created_at
+      ).getTime();
+
+    // Oudste eerst
+    if (sort == "oldest") {
+      return dateA - dateB;
+    }
+
+    // Nieuwste eerst
+    return dateB - dateA;
+  });
+
   if (project == null) {
     return <p>Laden...</p>;
   }
 
   // Alleen feedback tonen die past bij de status en het zoekwoord
-  const shownFeedback = feedback.filter(function (item) {
+  const shownFeedback = sortedFeedback.filter(function (item) {
     // Status controleren
     if (
       filter != "alles" &&
@@ -204,6 +232,24 @@ export default function ProjectDetail() {
           </option>
           <option value="afgerond">
             Afgerond
+          </option>
+        </select>
+
+        <label>
+          Sorteren
+        </label>
+
+        <select
+          value={sort}
+          onChange={function (e) {
+            setSort(e.target.value);
+          }}
+        >
+          <option value="newest">
+            Nieuwste eerst
+          </option>
+          <option value="oldest">
+            Oudste eerst
           </option>
         </select>
 
