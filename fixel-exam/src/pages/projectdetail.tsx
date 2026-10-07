@@ -17,6 +17,9 @@ export default function ProjectDetail() {
   const [filter, setFilter] =
     useState("alles");
 
+  const [search, setSearch] =
+    useState("");
+
   const [activities, setActivities] =
     useState<any[]>([]);
 
@@ -108,12 +111,36 @@ export default function ProjectDetail() {
     return <p>Laden...</p>;
   }
 
-  // Alleen feedback met de gekozen status tonen
+  // Alleen feedback tonen die past bij de status en het zoekwoord
   const shownFeedback = feedback.filter(function (item) {
-    if (filter == "alles") {
-      return true;
+    // Status controleren
+    if (
+      filter != "alles" &&
+      item.status != filter
+    ) {
+      return false;
     }
-    return item.status == filter;
+
+    // Tekst waarin we zoeken
+    const text =
+      item.message +
+      " " +
+      item.page_path +
+      " " +
+      item.element;
+
+    // Zoekwoord controleren
+    if (
+      !text
+        .toLowerCase()
+        .includes(
+          search.toLowerCase()
+        )
+    ) {
+      return false;
+    }
+
+    return true;
   });
 
   return (
@@ -143,6 +170,18 @@ export default function ProjectDetail() {
         </a>
 
         <h2>Feedback</h2>
+
+        <label>
+          Zoeken
+        </label>
+
+        <input
+          placeholder="Zoek feedback..."
+          value={search}
+          onChange={function (e) {
+            setSearch(e.target.value);
+          }}
+        />
 
         <label>
           Filter

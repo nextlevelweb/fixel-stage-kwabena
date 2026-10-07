@@ -46,6 +46,8 @@ export default function App() {
     </ProtectedRoute>
 
   }
+/>
+
         <Route
           path="/projects"
           element={
@@ -58,5 +60,4 @@ export default function App() {
       </Routes>
     </BrowserRouter>
   );
-        />
 }
