@@ -11,28 +11,17 @@ export default function ProjectDetail() {
   const [project, setProject] =
     useState<any>(null);
 
-const [feedback, setFeedback] =
-  useState<any[]>([]);
+  const [feedback, setFeedback] =
+    useState<any[]>([]);
 
-useEffect(function () {
-  getProject();
-  getFeedback();
-}, []);
+  const [filter, setFilter] =
+    useState("alles");
 
-// Feedback van dit project ophalen
-async function getFeedback() {
-  const result =
-    await supabase
-      .from("feedback")
-      .select("*")
-      .eq(
-        "project_id",
-        params.id
-      );
-  if (result.data) {
-    setFeedback(result.data);
-  }
-}
+  useEffect(function () {
+    getProject();
+    getFeedback();
+  }, []);
+
   // Eén project ophalen
   async function getProject() {
     const result =
@@ -47,9 +36,49 @@ async function getFeedback() {
     }
   }
 
+  // Feedback van dit project ophalen
+  async function getFeedback() {
+    const result =
+      await supabase
+        .from("feedback")
+        .select("*")
+        .eq(
+          "project_id",
+          params.id
+        );
+
+    if (result.data) {
+      setFeedback(result.data);
+    }
+  }
+
+  // Status van feedback veranderen
+  async function changeStatus(
+    id: number,
+    newStatus: string
+  ) {
+    await supabase
+      .from("feedback")
+      .update({
+        status: newStatus
+      })
+      .eq("id", id);
+
+    // Lijst opnieuw ophalen
+    getFeedback();
+  }
+
   if (project == null) {
     return <p>Laden...</p>;
   }
+
+  // Alleen feedback met de gekozen status tonen
+  const shownFeedback = feedback.filter(function (item) {
+    if (filter == "alles") {
+      return true;
+    }
+    return item.status == filter;
+  });
 
   return (
     <>
@@ -78,37 +107,77 @@ async function getFeedback() {
         </a>
 
         <h2>Feedback</h2>
-{feedback.map(function (item) {
-  return (
-    <div key={item.id}>
-      <hr />
-      <p>
-        Pagina: {item.page_path}
-      </p>
-      <p>
-        Element: {item.element}
-      </p>
-      <p>
-        {item.message}
-      </p>
-      <p>
-        Status: {item.status}
-      </p>
-      {item.screenshot_url && (
-        <a
-          href={item.screenshot_url}
-          target="_blank"
+
+        <label>
+          Filter
+        </label>
+
+        <select
+          value={filter}
+          onChange={function (e) {
+            setFilter(e.target.value);
+          }}
         >
-          Screenshot bekijken
-        </a>
-      )}
-    </div>
+          <option value="alles">
+            Alles
+          </option>
+          <option value="nieuw">
+            Nieuw
+          </option>
+          <option value="in behandeling">
+            In behandeling
+          </option>
+          <option value="afgerond">
+            Afgerond
+          </option>
+        </select>
 
-  );
+        {shownFeedback.map(function (item) {
+          return (
+            <div key={item.id}>
+              <hr />
+              <p>
+                Pagina: {item.page_path}
+              </p>
+              <p>
+                Element: {item.element}
+              </p>
+              <p>
+                {item.message}
+              </p>
 
-})}
+              <select
+                value={item.status}
+                onChange={function (e) {
+                  changeStatus(
+                    item.id,
+                    e.target.value
+                  );
+                }}
+              >
+                <option value="nieuw">
+                  Nieuw
+                </option>
+                <option value="in behandeling">
+                  In behandeling
+                </option>
+                <option value="afgerond">
+                  Afgerond
+                </option>
+              </select>
+
+              {item.screenshot_url && (
+                <a
+                  href={item.screenshot_url}
+                  target="_blank"
+                >
+                  Screenshot bekijken
+                </a>
+              )}
+            </div>
+          );
+        })}
       </main>
     </>
   );
-  
 }
