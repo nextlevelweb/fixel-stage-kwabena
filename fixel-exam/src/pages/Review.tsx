@@ -13,23 +13,36 @@ export default function Review() {
   const [message, setMessage] =
     useState("");
 
-  // Position of the pin
+  // Position of new pin
   const [x, setX] =
     useState<number | null>(null);
 
   const [y, setY] =
     useState<number | null>(null);
 
-  // Existing feedback
+  // Feedback items
   const [feedback, setFeedback] =
     useState<any[]>([]);
 
-  // Load project when page opens
+  // Replies
+  const [replies, setReplies] =
+    useState<any[]>([]);
+
+  // Which feedback we reply to
+  const [replyFeedbackId, setReplyFeedbackId] =
+    useState<number | null>(null);
+
+  // Reply text
+  const [replyText, setReplyText] =
+    useState("");
+
+
   useEffect(function () {
     getProject();
   }, []);
 
-  // Find project using the public review key
+
+  // Get project by public key
   async function getProject() {
     const result =
       await supabase
@@ -47,12 +60,15 @@ export default function Review() {
       getFeedback(
         result.data.id
       );
+
+      getReplies();
     }
   }
 
-  // Get feedback for this project
+
+  // Get feedback
   async function getFeedback(
-    projectId: string
+    projectId: number
   ) {
     const result =
       await supabase
@@ -61,6 +77,10 @@ export default function Review() {
         .eq(
           "project_id",
           projectId
+        )
+        .order(
+          "created_at",
+          { ascending: true }
         );
 
     if (result.data) {
@@ -68,7 +88,25 @@ export default function Review() {
     }
   }
 
-  // Save position when reviewer clicks
+
+  // Get replies
+  async function getReplies() {
+    const result =
+      await supabase
+        .from("feedback_replies")
+        .select("*")
+        .order(
+          "created_at",
+          { ascending: true }
+        );
+
+    if (result.data) {
+      setReplies(result.data);
+    }
+  }
+
+
+  // Save the clicked position
   function choosePosition(
     e: React.MouseEvent<HTMLDivElement>
   ) {
@@ -91,25 +129,26 @@ export default function Review() {
     setY(yPercent);
   }
 
-  // Save feedback
+
+  // Add new feedback
   async function addFeedback(
     e: React.FormEvent
   ) {
     e.preventDefault();
 
-    // Reviewer must choose a position
     if (x == null || y == null) {
       alert(
         "Klik eerst op de website"
       );
+
       return;
     }
 
-    // Feedback may not be empty
     if (message.trim() == "") {
       alert(
         "Beschrijf wat je bedoelt"
       );
+
       return;
     }
 
@@ -128,23 +167,111 @@ export default function Review() {
       alert(
         "Feedback kon niet worden opgeslagen"
       );
+
       return;
     }
 
-    alert(
-      "Feedback toegevoegd"
-    );
 
-    // Clear new feedback
+    // Add activity
+    await supabase
+      .from("activity_log")
+      .insert({
+        project_id: project.id,
+
+        // Reviewer has no account
+        created_by: null,
+
+        actor_type: "reviewer",
+
+        event_type: "feedback",
+
+        description:
+          "Nieuwe feedback geplaatst: " +
+          message
+      });
+
+
     setMessage("");
     setX(null);
     setY(null);
 
-    // Reload feedback
     getFeedback(project.id);
+
+    alert(
+      "Feedback toegevoegd"
+    );
   }
 
-  // Project does not exist
+
+  // Add reviewer reply
+  async function addReply(
+    feedbackId: number
+  ) {
+    if (replyText.trim() == "") {
+      return;
+    }
+
+
+    const result =
+      await supabase
+        .from("feedback_replies")
+        .insert({
+          feedback_id: feedbackId,
+
+          // Reviewer has no account
+          created_by: null,
+
+          author_type: "reviewer",
+
+          author_name: null,
+
+          message: replyText
+        });
+
+
+    if (result.error) {
+      alert(
+        "Reactie kon niet worden opgeslagen"
+      );
+
+      return;
+    }
+
+
+    // Add activity
+    await supabase
+      .from("activity_log")
+      .insert({
+        project_id: project.id,
+
+        created_by: null,
+
+        actor_type: "reviewer",
+
+        event_type: "reactie",
+
+        description:
+          "Nieuwe reactie: " +
+          replyText
+      });
+
+
+    // Clear input
+    setReplyText("");
+    setReplyFeedbackId(null);
+
+
+    // Reload replies
+    getReplies();
+
+
+    alert(
+      "Reactie toegevoegd"
+    );
+  }
+
+
+  // Invalid review link
   if (project == null) {
     return (
       <main>
@@ -155,28 +282,36 @@ export default function Review() {
     );
   }
 
+
   return (
     <main>
+
       <h1>
         Review van {project.name}
       </h1>
+
 
       <p>
         Klik op de website waar je
         feedback wilt geven.
       </p>
 
-      {/* Website area */}
+
+      {/* Website */}
+
       <div
         className="review-area"
         onClick={choosePosition}
       >
+
         <iframe
           src={project.url}
           title={project.name}
         />
 
+
         {/* New pin */}
+
         {x != null && y != null && (
           <button
             className="feedback-pin new-pin"
@@ -190,7 +325,9 @@ export default function Review() {
           </button>
         )}
 
-        {/* Existing feedback pins */}
+
+        {/* Existing pins */}
+
         {feedback.map(function (item) {
           return (
             <button
@@ -199,6 +336,7 @@ export default function Review() {
               style={{
                 left:
                   item.x_percent + "%",
+
                 top:
                   item.y_percent + "%"
               }}
@@ -208,16 +346,23 @@ export default function Review() {
             </button>
           );
         })}
+
       </div>
+
+
+      {/* Add feedback */}
 
       <h2>
         Feedback toevoegen
       </h2>
 
+
       <form onSubmit={addFeedback}>
+
         <label>
           Feedback
         </label>
+
 
         <textarea
           value={message}
@@ -229,39 +374,172 @@ export default function Review() {
           }}
         />
 
+
         <button type="submit">
           Feedback toevoegen
         </button>
+
       </form>
+
+
+      {/* Feedback list */}
 
       <h2>
         Feedback
       </h2>
 
+
       {feedback.length == 0 && (
         <p>
-          Nog geen feedback op dit
-          project.
+          Nog geen feedback op dit project.
         </p>
       )}
 
+
       {feedback.map(function (item) {
+
         return (
           <div key={item.id}>
+
             <hr />
+
+
+            <h3>
+              Feedback #{item.id}
+            </h3>
+
 
             <p>
               {item.comment}
             </p>
 
+
             <p>
-              Status:
-              {" "}
-              {item.status}
+              Status: {item.status}
             </p>
+
+
+            {/* Replies */}
+
+            <h4>
+              Reacties
+            </h4>
+
+
+            {replies
+              .filter(function (reply) {
+
+                return (
+                  reply.feedback_id ==
+                  item.id
+                );
+
+              })
+              .map(function (reply) {
+
+                return (
+                  <div key={reply.id}>
+
+                    <p>
+                      <strong>
+                        {reply.author_type}
+                      </strong>
+                    </p>
+
+                    <p>
+                      {reply.message}
+                    </p>
+
+                    <small>
+                      {new Date(
+                        reply.created_at
+                      ).toLocaleString()}
+                    </small>
+
+                  </div>
+                );
+
+              })}
+
+
+            {/* Open reply box */}
+
+            {replyFeedbackId != item.id && (
+
+              <button
+                type="button"
+                onClick={function () {
+
+                  setReplyFeedbackId(
+                    item.id
+                  );
+
+                }}
+              >
+                Reageren
+              </button>
+
+            )}
+
+
+            {/* Reply form */}
+
+            {replyFeedbackId == item.id && (
+
+              <div>
+
+                <textarea
+                  value={replyText}
+                  placeholder="Schrijf een reactie..."
+                  maxLength={500}
+                  onChange={function (e) {
+
+                    setReplyText(
+                      e.target.value
+                    );
+
+                  }}
+                />
+
+
+                <button
+                  type="button"
+                  onClick={function () {
+
+                    addReply(
+                      item.id
+                    );
+
+                  }}
+                >
+                  Versturen
+                </button>
+
+
+                <button
+                  type="button"
+                  onClick={function () {
+
+                    setReplyText("");
+
+                    setReplyFeedbackId(
+                      null
+                    );
+
+                  }}
+                >
+                  Annuleren
+                </button>
+
+              </div>
+
+            )}
+
           </div>
         );
+
       })}
+
     </main>
   );
 }
