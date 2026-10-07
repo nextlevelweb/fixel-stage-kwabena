@@ -36,6 +36,10 @@ export default function Review() {
   const [replyText, setReplyText] =
     useState("");
 
+  // Feedback mode
+  const [feedbackMode, setFeedbackMode] =
+    useState(false);
+
 
   useEffect(function () {
     getProject();
@@ -106,7 +110,7 @@ export default function Review() {
   }
 
 
-  // Save the clicked position
+  // Choose position for new feedback
   function choosePosition(
     e: React.MouseEvent<HTMLDivElement>
   ) {
@@ -119,6 +123,7 @@ export default function Review() {
     const clickY =
       e.clientY - box.top;
 
+    // Convert position to percentage
     const xPercent =
       (clickX / box.width) * 100;
 
@@ -127,6 +132,9 @@ export default function Review() {
 
     setX(xPercent);
     setY(yPercent);
+
+    // Stop feedback mode after choosing a place
+    setFeedbackMode(false);
   }
 
 
@@ -297,17 +305,45 @@ export default function Review() {
       </p>
 
 
+      {/* Feedback mode button */}
+
+      <button
+        type="button"
+        onClick={function () {
+          setFeedbackMode(
+            !feedbackMode
+          );
+        }}
+      >
+        {feedbackMode
+          ? "Feedbackmodus stoppen"
+          : "Feedback plaatsen"}
+      </button>
+
+
       {/* Website */}
 
-      <div
-        className="review-area"
-        onClick={choosePosition}
-      >
+      <div className="review-area">
 
+        {/* Customer website */}
         <iframe
           src={project.url}
           title={project.name}
         />
+
+
+        {/* Transparent click layer */}
+        {feedbackMode && (
+          <div
+            className="feedback-layer"
+            onClick={choosePosition}
+          >
+            <p className="feedback-help">
+              Klik op de plek waar je
+              feedback wilt geven
+            </p>
+          </div>
+        )}
 
 
         {/* New pin */}
@@ -352,34 +388,49 @@ export default function Review() {
 
       {/* Add feedback */}
 
-      <h2>
-        Feedback toevoegen
-      </h2>
+      {x != null && y != null && (
+        <div>
 
+          <h2>
+            Feedback toevoegen
+          </h2>
 
-      <form onSubmit={addFeedback}>
+          <form onSubmit={addFeedback}>
 
-        <label>
-          Feedback
-        </label>
+            <label>
+              Wat moet hier veranderd worden?
+            </label>
 
+            <textarea
+              value={message}
+              maxLength={500}
+              placeholder="Beschrijf wat je bedoelt..."
+              onChange={function (e) {
+                setMessage(
+                  e.target.value
+                );
+              }}
+            />
 
-        <textarea
-          value={message}
-          maxLength={500}
-          onChange={function (e) {
-            setMessage(
-              e.target.value
-            );
-          }}
-        />
+            <button type="submit">
+              Feedback toevoegen
+            </button>
 
+            <button
+              type="button"
+              onClick={function () {
+                setX(null);
+                setY(null);
+                setMessage("");
+              }}
+            >
+              Annuleren
+            </button>
 
-        <button type="submit">
-          Feedback toevoegen
-        </button>
+          </form>
 
-      </form>
+        </div>
+      )}
 
 
       {/* Feedback list */}
