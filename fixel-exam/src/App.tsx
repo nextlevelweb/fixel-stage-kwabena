@@ -1,17 +1,23 @@
 import {
   BrowserRouter,
   Routes,
-  Route
+  Route,
+  Navigate
 } from "react-router-dom";
 
 
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
-import Projects from "./pages/projects";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProjectDetail from "./pages/projectdetail";
 import Review from "./pages/Review";
 
+// This component holds all the pages of Fixel.
+// Each <Route> says: when the address looks like this, show that page.
+// <ProtectedRoute> around a page means: only for logged-in employees.
+// The review page has no ProtectedRoute, a client opens it without an account.
 export default function App() {
   return (
     <BrowserRouter>
@@ -19,6 +25,14 @@ export default function App() {
         <Route
           path="/"
           element={<Login />}
+        />
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
         />
         <Route
           path="/dashboard"
@@ -50,11 +64,7 @@ export default function App() {
 
         <Route
           path="/projects"
-          element={
-            <ProtectedRoute>
-              <Projects />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/dashboard" replace />}
         />
 
       </Routes>

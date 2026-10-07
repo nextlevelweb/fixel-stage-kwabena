@@ -1,73 +1,98 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 
 export default function Login() {
   const navigate = useNavigate();
-  // Hier bewaren we wat de gebruiker typt
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  async function login() {
 
-  // Deze functie logt de gebruiker in
-  async function login(e: React.FormEvent) {
-
-    // Zorgt dat de pagina niet opnieuw laadt
-    e.preventDefault();
     setError("");
+    const emailInput =
+      document.getElementById("email") as HTMLInputElement;
 
-    // Controleer email en wachtwoord met Supabase
+    const passwordInput =
+      document.getElementById("password") as HTMLInputElement;
+
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    if (email == "") {
+      setError("Vul je e-mail in");
+      return;
+    }
+
+    if (password == "") {
+      setError("Vul je wachtwoord in");
+      return;
+    }
+
     const result =
       await supabase.auth.signInWithPassword({
         email: email,
         password: password
       });
 
-    // Als login fout gaat
     if (result.error) {
-      setError("Email of wachtwoord is verkeerd");
+      setError("E-mail of wachtwoord onjuist");
+      passwordInput.value = "";
       return;
     }
 
-    // Login goed = naar dashboard
-    navigate("/dashboard");
 
+    navigate("/dashboard");
   }
 
+  let errorMessage = null;
+  if (error != "") {
+    errorMessage = (
+      <p className="error">
+        Foutmelding: {error}
+      </p>
+    );
+  }
 
   return (
-    <main>
-      <h1>Fixel Login</h1>
-      <form onSubmit={login}>
-        <label>Email</label>
+    <div className="login-page">
+      <main className="login">
+
+        <h1>Fixel</h1>
+        <h2>Inloggen</h2>
+
+        <label>
+          E-mail
+        </label>
+
         <input
+          id="email"
           type="email"
-          value={email}
-          onChange={function (e) {
-            setEmail(e.target.value);
-          }}
         />
 
+        <label>
+          Wachtwoord
+        </label>
 
-        <label>Wachtwoord</label>
         <input
+          id="password"
           type="password"
-          value={password}
-          onChange={function (e) {
-            setPassword(e.target.value);
-
-          }}
         />
 
-        <button type="submit">
+        {errorMessage}
+
+        <button
+          type="button"
+          onClick={login}
+        >
+
           Inloggen
         </button>
-      </form>
-      {error && (
-        <p>{error}</p>
-      )}
-    </main>
 
+        <p className="login-link">
+          <Link to="/forgot-password">
+            Wachtwoord vergeten?
+          </Link>
+        </p>
+      </main>
+    </div>
   );
-
 }
