@@ -1,4 +1,5 @@
 import Nav from "./Nav";
+import "../styles/Shell.css";
 
 // This component is the frame around a page: the top bar and the grey content area.
 // "props.children" is the page that we put inside it.
@@ -14,6 +15,10 @@ export default function Shell(props: any) {
           {props.children}
         </div>
       </main>
+
+      <footer className="app-footer">
+        <img className="company-logo" src="/nextlevelweb-logo.png" alt="NextLevelWeb, technology with purpose" />
+      </footer>
     </div>
   );
 }

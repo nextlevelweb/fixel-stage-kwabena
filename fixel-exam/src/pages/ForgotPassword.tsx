@@ -84,6 +84,8 @@ export default function ForgotPassword() {
           <Link to="/">Terug naar inloggen</Link> {/* back to the login page */}
         </p>
       </main>
+
+      <img className="company-logo" src="/nextlevelweb-logo.png" alt="NextLevelWeb, technology with purpose" />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
+import "../styles/Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -93,6 +94,8 @@ export default function Login() {
           </Link>
         </p>
       </main>
+
+      <img className="company-logo" src="/nextlevelweb-logo.png" alt="NextLevelWeb, technology with purpose" />
     </div>
   );
 }
