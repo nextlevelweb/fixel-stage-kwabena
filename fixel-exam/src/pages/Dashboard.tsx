@@ -1,101 +1,88 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Shell from "../components/Shell";
 import { supabase } from "../supabase";
 import { logActivity } from "../activity";
 import { checkName, checkUrl, makePublicKey } from "../validation";
+import "../styles/Dashboard.css";
 
-// This component is the dashboard (FE-02, FE-06): the list of all projects,
-// the counters per status, a search box and the window for a new project.
 export default function Dashboard() {
-  const [projects, setProjects] =
-    useState<any[]>([]);
 
-  const [feedback, setFeedback] =
-    useState<any[]>([]);
+  // Variables
+  const [projects, setProjects] = useState<any[]>([]);
+  const [feedback, setFeedback] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [search, setSearch] =
-    useState("");
+  // New project variables
+  const [showNew, setShowNew] = useState(false);
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [urlError, setUrlError] = useState("");
+  const [saveError, setSaveError] = useState("");
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  // New project window
-  const [showNew, setShowNew] =
-    useState(false);
-
-  const [name, setName] =
-    useState("");
-
-  const [url, setUrl] =
-    useState("");
-
-  const [nameError, setNameError] =
-    useState("");
-
-  const [urlError, setUrlError] =
-    useState("");
-
-  const [saveError, setSaveError] =
-    useState("");
-
+  // Run when the page opens
   useEffect(function () {
     loadData();
   }, []);
 
-  // This function gets the data from Supabase: all projects and the status of all feedback.
-  // The counters and the "7 open" texts are counted from that feedback list.
-  // When something goes wrong we show an error text with a retry button.
+  // Get projects and feedback from Supabase
   async function loadData() {
     setLoading(true);
     setError("");
 
-    const projectResult =
-      await supabase
-        .from("projects")
-        .select("*")
-        .order("created_at", { ascending: false });
+    const p = await supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    const feedbackResult =
-      await supabase
-        .from("feedback_items")
-        .select("id, project_id, status");
+    const f = await supabase
+      .from("feedback_items")
+      .select("id, project_id, status");
 
-    if (projectResult.error || feedbackResult.error) {
-      setError("Projecten laden mislukt — opnieuw proberen");
+    if (p.error) {
+      setError("Projecten laden mislukt");
       setLoading(false);
       return;
     }
 
-    setProjects(projectResult.data);
-    setFeedback(feedbackResult.data);
+    if (f.error) {
+      setError("Feedback laden mislukt");
+      setLoading(false);
+      return;
+    }
+
+    setProjects(p.data); // Save projects
+    setFeedback(f.data); // Save feedback
     setLoading(false);
   }
 
-  // This function counts feedback with one status (open, bezig or afgerond).
-  // Give a project id to count for one project, or null to count for all projects.
+  // Count feedback with a certain status
   function countStatus(status: string, projectId: any) {
     let total = 0;
 
     for (const item of feedback) {
-      if (item.status != status) {
-        continue;
-      }
 
-      if (projectId != null && item.project_id != projectId) {
-        continue;
-      }
+      if (item.status == status) {
 
-      total = total + 1;
+        if (projectId == null) {
+          total = total + 1;
+        } else {
+          if (item.project_id == projectId) {
+            total = total + 1;
+          }
+        }
+
+      }
     }
 
     return total;
   }
 
-  // This function counts all feedback of one project, whatever the status is.
+  // Count all feedback for one project
   function countAll(projectId: any) {
     let total = 0;
 
@@ -108,8 +95,7 @@ export default function Dashboard() {
     return total;
   }
 
-  // This function gives the small text on a project card: "7 open", or "leeg"
-  // when the project has no feedback at all.
+  // Show feedback text on project cards
   function cardText(projectId: any) {
     if (countAll(projectId) == 0) {
       return "leeg";
@@ -118,8 +104,7 @@ export default function Dashboard() {
     return countStatus("open", projectId) + " open";
   }
 
-  // This function opens the window for a new project.
-  // It empties the fields and the error texts first.
+  // Open the new project window
   function openNew() {
     setName("");
     setUrl("");
@@ -129,72 +114,71 @@ export default function Dashboard() {
     setShowNew(true);
   }
 
-  // This function saves a new project (FE-02, FE-03).
-  // 1. Check the name and the website address. A mistake keeps the window open.
-  // 2. Save the project in Supabase with a random review key.
-  // 3. Write a line in the project history and load the list again.
-  async function addProject(
-    e: React.FormEvent
-  ) {
-    e.preventDefault();
-    setSaveError("");
+  // Add a new project to Supabase
+  async function addProject(e: React.FormEvent) {
+    e.preventDefault(); // Stop the page from refreshing
+    setSaveError(""); // Clear old error
 
-    // The window stays open and the values stay when something is wrong
-    const newNameError = checkName(name);
-    const newUrlError = checkUrl(url);
+    // Check the project name
+    const nameCheck = checkName(name);
+    setNameError(nameCheck);
 
-    setNameError(newNameError);
-    setUrlError(newUrlError);
+    // Check the website URL
+    const urlCheck = checkUrl(url);
+    setUrlError(urlCheck);
 
-    if (newNameError != "" || newUrlError != "") {
+    // Stop if the name is wrong
+    if (nameCheck != "") {
       return;
     }
 
-    const result =
-      await supabase
-        .from("projects")
-        .insert({
-          name: name.trim(),
-          url: url.trim(),
-          public_key: makePublicKey()
-        })
-        .select()
-        .single();
+    // Stop if the URL is wrong
+    if (urlCheck != "") {
+      return;
+    }
 
+    // Save the project
+    const result = await supabase
+      .from("projects")
+      .insert({
+        name: name.trim(),
+        url: url.trim(),
+        public_key: makePublicKey()
+      })
+      .select()
+      .single();
+
+    // Show error if saving fails
     if (result.error) {
-      setSaveError("Project kon niet worden toegevoegd, probeer opnieuw");
+      setSaveError("Project toevoegen mislukt");
       return;
     }
 
+    // Save activity history
     await logActivity(
       result.data.id,
       "project",
-      "Project \"" + result.data.name + "\" aangemaakt"
+      "Project " + result.data.name + " aangemaakt"
     );
 
-    setShowNew(false);
-
-    loadData();
+    setShowNew(false); // Close window
+    loadData(); // Refresh projects
   }
 
-  // Projects that match the search text
-  const shownProjects =
-    projects.filter(function (project) {
-      return project.name
-        .toLowerCase()
-        .includes(search.toLowerCase());
-    });
+  // Search for projects
+  const shownProjects = projects.filter(function (project) {
+    return project.name.toLowerCase()
+      .includes(search.toLowerCase());
+  });
 
-  // Here is the frame of the page: top bar, left menu and the grey content area
   return (
     <Shell>
-      {/* Here is the container with the title on the left and the "+ Nieuw project" button on the right */}
+
+      {/* Page title */}
       <div className="page-head">
         <div>
           <h1>Projecten</h1>
-          <p className="muted">
-            Beheer je feedback projecten
-          </p>
+          <p className="muted">Beheer je feedback projecten</p>
         </div>
 
         <button
@@ -206,10 +190,9 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Here are the three boxes with the counters: open (red), bezig (blue) and afgerond (green) */}
-      {/* Counters */}
-
+      {/* Feedback counters */}
       <div className="counters">
+
         <div className="counter counter-open">
           <strong>{countStatus("open", null)}</strong>
           <span>Open feedbackpunten</span>
@@ -224,14 +207,16 @@ export default function Dashboard() {
           <strong>{countStatus("afgerond", null)}</strong>
           <span>Afgerond feedbackpunten</span>
         </div>
+
       </div>
 
-      <label className="sr-only" htmlFor="project-search">
+      {/* Search input */}
+      <label className="sr-only" htmlFor="search">
         Zoeken
       </label>
 
       <input
-        id="project-search"
+        id="search"
         className="search"
         placeholder="Zoek projecten..."
         value={search}
@@ -240,31 +225,27 @@ export default function Dashboard() {
         }}
       />
 
-      {loading && (
-        <p>Laden...</p>
-      )}
+      {/* Loading message */}
+      {loading ? <p>Laden...</p> : null}
 
-      {error != "" && (
+      {/* Loading error */}
+      {error != "" ? (
         <div>
-          <p className="error" role="alert">
-            {error}
-          </p>
-
-          <button type="button" onClick={loadData}>
+          <p className="error">{error}</p>
+          <button onClick={loadData}>
             Opnieuw proberen
           </button>
         </div>
-      )}
+      ) : null}
 
-      {/* Here is the container with one card for every project. A card is a link to the project page */}
       {/* Project cards */}
-
       <div className="project-grid">
+
         {shownProjects.map(function (project) {
           return (
             <Link
-              className="project-card"
               key={project.id}
+              className="project-card"
               to={"/projects/" + project.id}
             >
               <div className="picture"></div>
@@ -276,18 +257,20 @@ export default function Dashboard() {
             </Link>
           );
         })}
+
       </div>
 
-      {loading == false && error == "" && shownProjects.length == 0 && (
-        <p className="empty">
-          Nog geen projecten gevonden — maak je eerste project aan
-        </p>
-      )}
+      {/* Empty projects message */}
+      {loading == false ? (
+        error == "" ? (
+          shownProjects.length == 0 ? (
+            <p className="empty">Geen projecten gevonden</p>
+          ) : null
+        ) : null
+      ) : null}
 
-      {/* Here is the window for a new project. It only exists when showNew is true */}
       {/* New project window */}
-
-      {showNew && (
+      {showNew ? (
         <div className="modal-backdrop">
           <div
             className="modal"
@@ -298,6 +281,8 @@ export default function Dashboard() {
             <h2 id="new-title">Nieuw project</h2>
 
             <form onSubmit={addProject} noValidate>
+
+              {/* Project name */}
               <label htmlFor="project-name">
                 Projectnaam
               </label>
@@ -311,12 +296,11 @@ export default function Dashboard() {
                 }}
               />
 
-              {nameError != "" && (
-                <p className="error" role="alert">
-                  {nameError}
-                </p>
-              )}
+              {nameError != "" ? (
+                <p className="error">{nameError}</p>
+              ) : null}
 
+              {/* Website URL */}
               <label htmlFor="project-url">
                 Website URL
               </label>
@@ -330,18 +314,16 @@ export default function Dashboard() {
                 }}
               />
 
-              {urlError != "" && (
-                <p className="error" role="alert">
-                  {urlError}
-                </p>
-              )}
+              {urlError != "" ? (
+                <p className="error">{urlError}</p>
+              ) : null}
 
-              {saveError != "" && (
-                <p className="error" role="alert">
-                  {saveError}
-                </p>
-              )}
+              {/* Save error */}
+              {saveError != "" ? (
+                <p className="error">{saveError}</p>
+              ) : null}
 
+              {/* Buttons */}
               <div className="modal-buttons">
                 <button
                   type="button"
@@ -356,10 +338,12 @@ export default function Dashboard() {
                   Project toevoegen
                 </button>
               </div>
+
             </form>
           </div>
         </div>
-      )}
+      ) : null}
+
     </Shell>
   );
 }

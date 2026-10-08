@@ -1,0 +1,94 @@
+/* Login, forgot password and reset password */
+
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 100vh;
+  padding: 20px;
+
+  background: #f5f5f5;
+}
+
+
+.login {
+  width: 100%;
+  max-width: 420px;
+
+  padding: 32px;
+
+  background: white;
+
+  border: 1px solid #333;
+}
+
+
+.login h1 {
+  font-size: 28px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+
+.login h2 {
+  margin: 10px 0 14px;
+
+  font-size: 12px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+
+  color: #5f5f5f;
+}
+
+
+.login form {
+  display: block;
+}
+
+
+.login button {
+  width: 100%;
+
+  margin-top: 14px;
+  padding: 16px;
+
+  font-size: 14px;
+}
+
+
+/* Green message, for example "e-mail sent" */
+.success {
+  margin: 10px 0;
+  padding: 10px 12px;
+
+  font-size: 12px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+
+  color: #1f5c33;
+  background: #e8f4ec;
+
+  border: 1px solid #347a49;
+}
+
+
+/* Small link under the login button */
+.login-link {
+  margin: 16px 0 0;
+
+  font-size: 13px;
+  text-align: center;
+}
+
+
+.login-link a {
+  color: #5f5f5f;
+}
+
+
+.login-link a:hover {
+  color: #1a1a1a;
+}
+

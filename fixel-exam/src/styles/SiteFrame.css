@@ -1,0 +1,122 @@
+/* Website frame with feedback layer and pins */
+
+/* The website and its pins fill the grey area */
+.site-frame {
+  position: absolute;
+
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+
+.site-frame iframe {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  border: 0;
+}
+
+
+/* Transparent layer used when placing feedback */
+.feedback-layer {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  cursor: crosshair;
+
+  background: rgba(59, 102, 230, 0.1);
+
+  z-index: 5;
+}
+
+
+/* Small instruction */
+.feedback-help {
+  position: absolute;
+
+  top: 10px;
+  left: 10px;
+
+  margin: 0;
+  padding: 8px 10px;
+
+  font-size: 12px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+
+  background: white;
+
+  border: 1px solid #333;
+}
+
+
+/* Feedback pin: a small square with a number */
+.feedback-pin {
+  position: absolute;
+
+  transform: translate(-50%, -50%);
+  will-change: transform;
+
+  width: 26px;
+  height: 26px;
+
+  padding: 0;
+
+  font-size: 12px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-weight: 700;
+
+  color: white;
+  background: #1a1a1a;
+
+  border: 2px solid white;
+
+  z-index: 10;
+}
+
+
+.feedback-pin:hover {
+  background: #1a1a1a;
+}
+
+
+.pin-open,
+.pin-open:hover {
+  background: #b3362f;
+}
+
+
+.pin-bezig,
+.pin-bezig:hover {
+  background: #3b66e6;
+}
+
+
+.pin-afgerond,
+.pin-afgerond:hover {
+  background: #347a49;
+}
+
+
+/* Open feedback item: black with a blue border */
+.feedback-pin.selected,
+.feedback-pin.selected:hover {
+  background: #1a1a1a;
+
+  border-color: #3b66e6;
+}
+
+
+/* New unsaved pin */
+.new-pin {
+  font-size: 18px;
+}
+

@@ -1,6 +1,7 @@
 import { useState } from "react"; // useState keeps values that the screen shows
 import { Link } from "react-router-dom"; // Link goes to another page without reloading
 import { supabase } from "../supabase"; // our connection with Supabase
+import "../styles/Login.css";
 
 // This page is for an employee who forgot the password.
 // He fills in his e-mail and Supabase sends him a link to choose a new password.
