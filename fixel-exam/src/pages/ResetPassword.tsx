@@ -1,6 +1,7 @@
 import { useState } from "react"; // useState keeps values that the screen shows
 import { Link, useNavigate } from "react-router-dom"; // Link = a link, useNavigate = go to a page from code
 import { supabase } from "../supabase"; // our connection with Supabase
+import "../styles/Login.css";
 
 // The employee lands here from the link in the e-mail.
 // Supabase has already logged him in for a moment (a "recovery session"),
@@ -111,6 +112,8 @@ export default function ResetPassword() {
           <Link to="/forgot-password">Nieuwe link aanvragen</Link> {/* ask for a new e-mail */}
         </p>
       </main>
+
+      <img className="company-logo" src="/nextlevelweb-logo.png" alt="NextLevelWeb, technology with purpose" />
     </div>
   );
 }
