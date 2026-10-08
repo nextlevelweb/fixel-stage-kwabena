@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../supabase";
 import { checkText } from "../validation";
 import SiteFrame from "../components/SiteFrame";
+import "../styles/Review.css";
+import "../styles/FeedbackShared.css";
 
 // Text for each status
 const STATUS_LABELS: any = {

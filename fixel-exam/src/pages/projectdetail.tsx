@@ -6,6 +6,8 @@ import { logActivity } from "../activity";
 import { timeAgo } from "../format";
 import SiteFrame from "../components/SiteFrame";
 import { checkName, checkUrl, checkText, makePublicKey } from "../validation";
+import "../styles/ProjectDetail.css";
+import "../styles/FeedbackShared.css";
 
 // These are the filter buttons for the status (FE-09).
 // "value" is what we compare with, "label" is the text on the button.
